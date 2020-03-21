@@ -3,7 +3,7 @@ NFC Reader using ACS ACR122U smartcard reader for the Solar Team Eindhoven payme
 used as submodule of the overlying raspberry pi python-kivy user interface to identify yourself as a buyer of 
 the one of the product in store. 
 
-##0. Requirements
+###0. Requirements
 Developed on Ubuntu 18.04 with Plasma KDE. Requires Python3.
 Depdencies that are required:
  - libusb-dev (USB development)
@@ -28,3 +28,11 @@ Depdencies that are required:
  
  You can save the file by pressing CTRL+X. You will probably have to restart your computer now.
  
+###1. Errorcodes
+See table underneath<br>
+Category = {Development, Debug, Runtime}
+
+| Errorcode 	| Category   	| Meaning                                                                                                                                       	|
+|-----------	|-------------	|-----------------------------------------------------------------------------------------------------------------------------------------------	|
+| 1         	| Development 	| Program has reached timelimit while waiting for a card to be presented. This error should not happen and implies an incorrect implementation. 	|
+|           	|             	|                                                                                                                                               	|                                                                                                                                                	|                                                                                                                                     	|

@@ -19,18 +19,33 @@ class NFCReader:
 
     # Reference to the connection of the card
     __service = None
+    __request = None
+
+    #
+    # Resets variables before listening to establish a new connection
+    #
+    def __reset_local_vars(self):
+        # If they are None, no work is required, else set them to None
+        if self.__uid is not None and self.__status is not None and self.__service is not None:
+            self.__service = None
+            self.__uid = None
+            self.__status = None
+            self.__request = None
 
     #
     # Enables listening to NFC chip on card reader
     # var card_type: type of cards listening for
     #
-    def enable_card_listener(self, card_type):
+    def enable_card_listener(self, card_type=AnyCardType()):
+        # Check if resetting vars is required and if so, do so
+        self.__reset_local_vars()
+
         # Setup a cardRequest: waiting infinitely for any card type
-        request = CardRequest(timeout=INFINITE, cardType=card_type)
+        self.__request = CardRequest(timeout=INFINITE, cardType=card_type)
 
         try:
             # Once a card is presented, initialize variables to setup connection
-            self.__service = request.waitforcard()
+            self.__service = self.__request.waitforcard()
             self.__on_card_presented()
         except CardRequestTimeoutException:
             print("This should not happen: Timelimit reached for card presenting")
@@ -69,7 +84,7 @@ class NFCReader:
     # Called upon creation of the class
     def __init__(self):
         # Specify card acceptance: any card accepted by the card reader
-        self.enable_card_listener(AnyCardType())
+        self.enable_card_listener()
 
         # Print results
         # self.debug_print()
@@ -95,7 +110,24 @@ class NFCReader:
     def get_uid(self):
         return self.__uid
 
+    #
+    # reset connection
+    #
+    def reset_connection(self):
+        self.__service = None
 
+
+# create nfc_reader object
 nfc_reader = NFCReader()
-uid = nfc_reader.get_uid()
-print(uid)
+prev_uid = None
+# uid = nfc_reader.get_uid()
+# print(uid)
+
+# For testing, print uid and restart listener
+while True:
+    uid = nfc_reader.get_uid()
+    if prev_uid != uid:
+        print(uid)
+    prev_uid = uid
+    # nfc_reader.reset_connection()
+    nfc_reader.enable_card_listener()
