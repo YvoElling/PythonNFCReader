@@ -1,33 +1,101 @@
 from smartcard.scard import *
-
-try:
-    hresult, hcontext = SCardEstablishContext(SCARD_SCOPE_USER)
-    if hresult != SCARD_S_SUCCESS:
-        raise error(
-            "Failed to establish context: " + SCardGetErrorMessage(hcontext)
-        )
-    print('Context Established')
-
-    try:
-        hresult, readers = SCardListReaders(hcontext, [])
-        if hresult != SCARD_S_SUCCESS:
-            raise error(
-                "Failed to retrieve readers: " + SCardGetErrorMessage(hresult)
-            )
-        readerStates = [(readers[0], SCARD_STATE_UNAWARE)]
-        hresult, newstates = SCardGetStatusChange(hcontext, 0, readerStates)
-
-        hresult2, newstates = SCardGetStatusChange(hcontext, INFINITE, newstates)
-        if newstates[0][1] == SCARD_STATE_PRESENT:
-            print('New card detected')
-
-        print(newstates[0][1])
-
-    except error as e:
-        print(e)
-
-except error as e:
-    print(e)
+from smartcard.CardRequest import CardRequest
+from smartcard.Exceptions import CardRequestTimeoutException
+from smartcard.CardType import AnyCardType
+from smartcard import util
 
 
+# NFCReader class
+# Is a blocking class until a card is presented to the card reader
+#
+class NFCReader:
 
+    # Command to get UID (Serial number) of the presented NFC chip
+    __GETUIDCOMMAND = "FF CA 00 00 00"
+
+    # Card response values (in HEX)
+    __uid = None
+    __status = None
+
+    # Reference to the connection of the card
+    __service = None
+
+    #
+    # Enables listening to NFC chip on card reader
+    # var card_type: type of cards listening for
+    #
+    def enable_card_listener(self, card_type):
+        # Setup a cardRequest: waiting infinitely for any card type
+        request = CardRequest(timeout=INFINITE, cardType=card_type)
+
+        try:
+            # Once a card is presented, initialize variables to setup connection
+            self.__service = request.waitforcard()
+            self.__on_card_presented()
+        except CardRequestTimeoutException:
+            print("This should not happen: Timelimit reached for card presenting")
+            exit(1)
+
+    #
+    # Callback function for when a card is presented
+    # will establish a connection and attempt to send a command
+    #
+    # var service: the reference to the card
+    #
+    def __on_card_presented(self):
+        # Setup connection and connect to the provided card
+        connection = self.__service.connection
+        connection.connect()
+        # Send command to acquired connection
+        self.__send_command(connection, self.__GETUIDCOMMAND)
+
+    #
+    # Send @command over @connection
+    # Used to execute commands and store response values in class variables
+    #
+    # var connection: the connection over which to send the command
+    # var command: the command to send over the aforementioned connection
+    #
+    def __send_command(self, connection, command):
+        # Send GET_UID_COMMAND to the card reader
+        get_uid_cmd = util.toBytes(command)
+        # Retrieve response from APNU request
+        data, sw1, sw2 = connection.transmit(get_uid_cmd)
+        # Convert byte response data to HEX values
+        self.__uid = util.toHexString(data)
+        # Convert byte response values identifying success/failure to HEX values
+        self.__status = util.toHexString([sw1, sw2])
+
+    # Called upon creation of the class
+    def __init__(self):
+        # Specify card acceptance: any card accepted by the card reader
+        self.enable_card_listener(AnyCardType())
+
+        # Print results
+        # self.debug_print()
+
+    #
+    # Used to print the class' member variables
+    # DEBUGGING PURPOSE
+    #
+    def debug_print(self):
+        print("UID of card: " + self.__uid)
+        print("Status of request: " + self.__status)
+
+    #
+    # Get reference to the card
+    # DEBUGGING PURPOSE
+    #
+    def debug_get_service(self):
+        return self.__service
+
+    #
+    # Get UID of card
+    #
+    def get_uid(self):
+        return self.__uid
+
+
+nfc_reader = NFCReader()
+uid = nfc_reader.get_uid()
+print(uid)
