@@ -110,24 +110,6 @@ class NFCReader:
     def get_uid(self):
         return self.__uid
 
-    #
-    # reset connection
-    #
-    def reset_connection(self):
-        self.__service = None
-
 
 # create nfc_reader object
 nfc_reader = NFCReader()
-prev_uid = None
-# uid = nfc_reader.get_uid()
-# print(uid)
-
-# For testing, print uid and restart listener
-while True:
-    uid = nfc_reader.get_uid()
-    if prev_uid != uid:
-        print(uid)
-    prev_uid = uid
-    # nfc_reader.reset_connection()
-    nfc_reader.enable_card_listener()
