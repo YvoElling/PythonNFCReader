@@ -109,7 +109,3 @@ class NFCReader:
     #
     def get_uid(self):
         return self.__uid
-
-
-# create nfc_reader object
-nfc_reader = NFCReader()
