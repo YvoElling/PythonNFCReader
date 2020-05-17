@@ -10,6 +10,7 @@ Depdencies that are required:
  - pcscd (PC/SC daemon)
  - libpcsclite1 (PC/SC lite library)
  - libpcsclite-dev (PC/SC lite development library)
+ - pyscard (download repository and setup.py)
  
  After connecting the ACS ACR122U, run: 
  > lsusb
