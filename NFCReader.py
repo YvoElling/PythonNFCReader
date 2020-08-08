@@ -2,10 +2,11 @@ import os
 import threading
 from typing import List
 
+from kivy import Logger
 from smartcard import util
 from smartcard.CardRequest import CardRequest
 from smartcard.CardType import AnyCardType
-from smartcard.Exceptions import CardRequestTimeoutException
+from smartcard.Exceptions import CardRequestTimeoutException, CardConnectionException, NoCardException
 from smartcard.scard import *
 
 from PythonNFCReader.CardListener import CardListener
@@ -52,9 +53,9 @@ class NFCReader:
             # Once a card is presented, initialize variables to setup connection
             self.__service = self.__request.waitforcard()
             self.__on_card_presented()
-        except CardRequestTimeoutException:
-            print("This should not happen: Timelimit reached for card presenting")
-            os._exit(os.EX_SOFTWARE)
+        except CardRequestTimeoutException as e:
+            Logger.critical("This should not happen: Timelimit reached for card presenting")
+            os._exit(1)
 
     #
     # Callback function for when a card is presented
@@ -65,9 +66,13 @@ class NFCReader:
     def __on_card_presented(self):
         # Setup connection and connect to the provided card
         connection = self.__service.connection
-        connection.connect()
-        # Send command to acquired connection
-        self.__send_command(connection, self.__GETUIDCOMMAND)
+        try:
+            connection.connect()
+            # Send command to acquired connection
+            self.__send_command(connection, self.__GETUIDCOMMAND)
+        except (CardConnectionException, NoCardException) as e:
+            Logger.warn("Could not connect to card when trying to read UID!")
+            return
 
     #
     # Send @command over @connection
