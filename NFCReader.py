@@ -40,8 +40,12 @@ class NFCReader:
         # Check if resetting vars is required and if so, do so
         self.__reset_local_vars()
 
-        # Setup a cardRequest: waiting infinitely for any card type
-        self.__request = CardRequest(timeout=INFINITE, cardType=card_type)
+        try :
+            # Setup a cardRequest: waiting infinitely for any card type
+            self.__request = CardRequest(timeout=INFINITE, cardType=card_type)
+        except Exception:
+            print("Could not get card reader class. Not using card reader!")
+            return
 
         try:
             # Once a card is presented, initialize variables to setup connection
