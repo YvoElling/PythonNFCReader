@@ -131,13 +131,13 @@ class CardConnectionManager:
     def start_nfc_reader(self):
         # Create thread that will block while waiting for a card
         self.nfc_thread = threading.Thread(name="NFC_reader",
-                                           target=self.__generate_nfc_reader)
+                                           target=self.__generate_nfc_reader, daemon=True)
         self.nfc_thread.start()
 
         # Create thread that will listen for the nfc_thread to finish
         self.listener_thread = threading.Thread(name="NFC_reader_monitor",
                                                 target=self.__monitor_nfc_reader,
-                                                args=(self.nfc_thread,))
+                                                args=(self.nfc_thread,), daemon=True)
         self.listener_thread.start()
 
     def __generate_nfc_reader(self):
