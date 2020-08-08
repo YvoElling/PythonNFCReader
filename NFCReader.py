@@ -1,15 +1,19 @@
-from smartcard.scard import *
-from smartcard.CardRequest import CardRequest
-from smartcard.Exceptions import CardRequestTimeoutException
-from smartcard.CardType import AnyCardType
+import threading
+from typing import List
+
 from smartcard import util
+from smartcard.CardRequest import CardRequest
+from smartcard.CardType import AnyCardType
+from smartcard.Exceptions import CardRequestTimeoutException
+from smartcard.scard import *
+
+from PythonNFCReader.CardListener import CardListener
 
 
 # NFCReader class
 # Is a blocking class until a card is presented to the card reader
 #
 class NFCReader:
-
     # Command to get UID (Serial number) of the presented NFC chip
     __GETUIDCOMMAND = "FF CA 00 00 00"
 
@@ -40,12 +44,8 @@ class NFCReader:
         # Check if resetting vars is required and if so, do so
         self.__reset_local_vars()
 
-        try :
-            # Setup a cardRequest: waiting infinitely for any card type
-            self.__request = CardRequest(timeout=INFINITE, cardType=card_type)
-        except Exception:
-            print("Could not get card reader class. Not using card reader!")
-            return
+        # Setup a cardRequest: waiting infinitely for any card type
+        self.__request = CardRequest(timeout=INFINITE, cardType=card_type)
 
         try:
             # Once a card is presented, initialize variables to setup connection
@@ -113,3 +113,47 @@ class NFCReader:
     #
     def get_uid(self):
         return self.__uid
+
+
+class CardConnectionManager:
+    def __init__(self):
+        self.listeners: List[CardListener] = []
+        pass
+
+    def register_listener(self, card_listener: CardListener) -> None:
+        if card_listener is not None:
+            self.listeners.append(card_listener)
+
+    def start_nfc_reader(self):
+        # Create thread that will block while waiting for a card
+        self.nfc_thread = threading.Thread(name="NFC_reader",
+                                           target=self.generate_nfc_reader)
+        self.nfc_thread.start()
+
+        # Create thread that will listen for the nfc_thread to finish
+        self.listener_thread = threading.Thread(name="NFC_reader_monitor",
+                                                target=self.monitor_nfc_reader,
+                                                args=(self.nfc_thread,))
+        self.listener_thread.start()
+
+    def generate_nfc_reader(self):
+        # Blocking call (as it will start waiting for a card)
+        self.nfc_reader = NFCReader()
+
+    def monitor_nfc_reader(self, thread: threading.Thread) -> None:
+        # Wait for the thread to finish
+        thread.join()
+
+        uid = self.nfc_reader.get_uid()
+
+        # Check if we got a valid uid (of the card)
+        if uid is not None and uid != "":
+            # Notify listeners that we received a new card
+            self.notify_listeners(self.nfc_reader.get_uid().replace(" ", ""))
+
+        # Start waiting for a new card after 1 second.
+        threading.Timer(1.0, self.start_nfc_reader).start()
+
+    def notify_listeners(self, uid: str):
+        for listener in self.listeners:
+            listener.card_is_presented(uid)
