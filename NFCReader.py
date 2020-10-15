@@ -7,6 +7,7 @@ from smartcard import util
 from smartcard.CardRequest import CardRequest
 from smartcard.CardType import AnyCardType
 from smartcard.Exceptions import CardRequestTimeoutException, CardConnectionException, NoCardException
+from smartcard.pcsc.PCSCExceptions import EstablishContextException
 from smartcard.scard import *
 
 from PythonNFCReader.CardListener import CardListener
@@ -46,16 +47,19 @@ class NFCReader:
         # Check if resetting vars is required and if so, do so
         self.__reset_local_vars()
 
-        # Setup a cardRequest: waiting infinitely for any card type
-        self.__request = CardRequest(timeout=INFINITE, cardType=card_type)
-
         try:
+            # Setup a cardRequest: waiting infinitely for any card type
+            self.__request = CardRequest(timeout=INFINITE, cardType=card_type)
+
             # Once a card is presented, initialize variables to setup connection
             self.__service = self.__request.waitforcard()
             self.__on_card_presented()
         except CardRequestTimeoutException as e:
             Logger.critical("This should not happen: Timelimit reached for card presenting")
             os._exit(1)
+        except EstablishContextException as e2:
+            # There is no smartcard reader found so we just ignore it.
+            pass
 
     #
     # Callback function for when a card is presented
