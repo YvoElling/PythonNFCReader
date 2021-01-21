@@ -11,7 +11,8 @@ Depdencies that are required:
  - pcsc-tools (To run pcsc_scan)
  - libpcsclite1 (PC/SC lite library)
  - libpcsclite-dev (PC/SC lite development library)
- - python3-pyscard (download repository and setup.py)
+ - pyscard (python module) download repository and setup.py)
+ - swig (for building the wheel of pyscard)
  
  After connecting the ACS ACR122U, run: 
  > lsusb
