@@ -8,6 +8,7 @@ Developed on Ubuntu 18.04 with Plasma KDE. Requires Python3.
 Depdencies that are required:
  - libusb-dev (USB development)
  - pcscd (PC/SC daemon)
+ - pcsc-tools (To run pcsc_scan)
  - libpcsclite1 (PC/SC lite library)
  - libpcsclite-dev (PC/SC lite development library)
  - python3-pyscard (download repository and setup.py)
